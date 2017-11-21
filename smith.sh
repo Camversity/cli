@@ -21,7 +21,7 @@ DO_ACTION="";
 
 function usage()
 {
-  echo "FORMAT: ./deploy.sh  ACTION [ PARAMETERS ]"
+  echo "FORMAT: $0  ACTION [ PARAMETERS ]"
   echo "ACTIONS: login, build-docker, push-docker, deploy, rollout-status, rollback"
   echo "parameters override env vars"
   echo "PARAMETERS:"
@@ -55,7 +55,7 @@ function read_args()
 
     case $PARAM in
       -h | --help)
-        usage
+        usage "$@"
         exit
         ;;
       --google-account-json)
@@ -99,7 +99,7 @@ function read_args()
         ;;
       *)
         echo "ERROR: unknown parameter \"$PARAM\""
-        echo "deploy -h for usage";
+        echo "$0 -h for usage";
         exit 1
         ;;
     esac
@@ -125,7 +125,7 @@ function check_action()
   if [ -z "$DO_ACTION" ];
   then
     echo "no action specified";
-    echo "deploy -h for usage";
+    echo "$0 -h for usage";
     exit;
   fi;
 }
@@ -134,10 +134,6 @@ function check_action()
 function process_action()
 {
   case $DO_ACTION in
-    -h | --help)
-      usage
-      exit
-      ;;
     login)
       login
       exit
@@ -159,7 +155,7 @@ function process_action()
       ;;
     *)
       echo "ERROR: unknown action \"$DO_ACTION\""
-      echo "deploy -h for usage";
+      echo "$0 -h for usage";
       exit 1
       ;;
   esac
@@ -175,7 +171,7 @@ function login()
     gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE_VAR};
     gcloud --quiet container clusters get-credentials ${GOOGLE_CLUSTER_NAME_VAR};
   else
-    echo "ERROR: needs account_json, project_id, compute_zone, cluster_name - deploy.sh -h for usage";
+    echo "ERROR: needs account_json, project_id, compute_zone, cluster_name - $0 -h for usage";
   fi;
   exit;
 }
@@ -189,7 +185,7 @@ function build_docker()
     docker build -f Dockerfile.prod -t ${DOCKER_TAG} .;
     docker tag ${DOCKER_TAG} ${DOCKER_NAME}:latest;
   else
-    echo "ERROR: needs project_id, project_name, commit_hash - deploy.sh -h for usage";
+    echo "ERROR: needs project_id, project_name, commit_hash - $0 -h for usage";
   fi;
   exit;
 }
@@ -203,7 +199,7 @@ function push_docker()
     gcloud docker -- push ${DOCKER_TAG}
     gcloud docker -- push ${DOCKER_NAME}:latest
   else
-    echo "ERROR: needs project_id, project_name, commit_hash - deploy.sh -h for usage";
+    echo "ERROR: needs project_id, project_name, commit_hash - $0 -h for usage";
 
   fi;
   exit;
@@ -217,7 +213,7 @@ function deploy()
     export DOCKER_TAG="${DOCKER_NAME}:${CIRCLE_SHA1_VAR}";
     kubectl set image deployment/${PROJECT_NAME_VAR} ${PROJECT_NAME_VAR}=${DOCKER_TAG} --record
   else
-    echo "ERROR: needs project_id, project_name, commit_hash - deploy.sh -h for usage";
+    echo "ERROR: needs project_id, project_name, commit_hash - $0 -h for usage";
 
   fi;
   exit;
@@ -230,7 +226,7 @@ function rollout_status()
   then
     kubectl rollout status deployment ${PROJECT_NAME_VAR}
   else
-    echo "ERROR: needs project_name - deploy.sh -h for usage";
+    echo "ERROR: needs project_name - $0 -h for usage";
   fi;
   exit;
 }
@@ -242,7 +238,7 @@ function rollback()
   then
     kubectl rollout undo deployment/${PROJECT_NAME_VAR}
   else
-    echo "ERROR: needs project_name  - deploy.sh -h for usage";
+    echo "ERROR: needs project_name  - $0 -h for usage";
   fi;
   exit;
 }
