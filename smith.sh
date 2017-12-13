@@ -279,7 +279,7 @@ function show-var()
 
     echo "project_id:" $GOOGLE_PROJECT_ID;
     echo "compute_zone: "$GOOGLE_COMPUTE_ZONE;
-    echo "cluster_name: "$GOOGLE_CLUSTER_NAMEG;
+    echo "cluster_name: "$GOOGLE_CLUSTER_NAME;
     echo "project_name: "$PROJECT_NAME;
     echo "commit_hash: "$CIRCLE_SHA1;
     echo "action: "$DO_ACTION;
@@ -291,7 +291,7 @@ function show-var()
 
 function report_status()
 {
-  if [ -n "${PROJECT_NAME_VAR}" -a -n "${REPORT_URL_VAR}" -a -n "${CIRCLE_SHA1_VAR}", -a -n "${REPORT_URL_CHANNEL_VAR}" ];
+  if [ -n "${PROJECT_NAME_VAR}" -a -n "${REPORT_URL_VAR}" -a -n "${CIRCLE_SHA1_VAR}" -a -n "${REPORT_URL_CHANNEL_VAR}" -a -n"${GOOGLE_CLUSTER_NAME_VAR}" ];
   then
     STATUS_TEXT=$(kubectl rollout status deployment ${PROJECT_NAME_VAR});
     REPORT_COLOR="danger"; #default
@@ -302,11 +302,11 @@ function report_status()
         REPORT_COLOR="good";
     fi
 
-    JSON_REPORT="{\"channel\":\"${REPORT_URL_CHANNEL_VAR}\", \"username\":\"${PROJECT_NAME_VAR}\", \"attachments\":[{\"color\":\"${REPORT_COLOR}\" , \"text\":\"${DEPLOY_STATUS}\nBuild: ${CIRCLE_SHA1_VAR}\" }]}";
+    JSON_REPORT="{\"channel\":\"${REPORT_URL_CHANNEL_VAR}-${GOOGLE_CLUSTER_NAME_VAR}\", \"username\":\"${PROJECT_NAME_VAR}\", \"attachments\":[{\"color\":\"${REPORT_COLOR}\" , \"text\":\"${DEPLOY_STATUS}\nBuild: ${CIRCLE_SHA1_VAR}\" }]}";
     REPORT_ANSWER=`curl -X POST -H 'Content-type: application/json' --data "$JSON_REPORT" "$REPORT_URL_VAR"`;
     exit;
   else
-    echo "ERROR: needs project_name, report url, report channel, commit hash - $0 -h for usage";
+    echo "ERROR: needs project_name, report url, report channel, commit hash, cluster name - $0 -h for usage";
   fi;
   exit;
 }
