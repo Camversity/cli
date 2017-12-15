@@ -97,6 +97,12 @@ function read_args()
       login)
         DO_ACTION="login"
         ;;
+      login-docker)
+        DO_ACTION="login-docker"
+        ;;
+      login-kube)
+        DO_ACTION="login-kube"
+        ;;
       build-docker)
         DO_ACTION="build-docker"
         ;;
@@ -158,8 +164,15 @@ function process_action()
       login
       exit
       ;;
+    login-kube)
+      login_kube
+      exit
+      ;;
     build-docker)
       build_docker;
+      ;;
+    login-docker)
+      login_docker;
       ;;
     push-docker)
       push_docker
@@ -198,6 +211,37 @@ function login()
   fi;
   exit;
 }
+
+
+function login_kube()
+{
+  if [ -n "$GOOGLE_ACCOUNT_JSON_VAR" -a -n "$GOOGLE_PROJECT_ID_VAR" -a -n "$GOOGLE_COMPUTE_ZONE_VAR" -a -n "$GOOGLE_CLUSTER_NAME_VAR" ];
+  then
+    echo "${GOOGLE_ACCOUNT_JSON_VAR}" > account.json;
+    gcloud auth activate-service-account --key-file account.json;
+    gcloud --quiet config set project ${GOOGLE_PROJECT_ID_VAR};
+    gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE_VAR};
+    gcloud --quiet container clusters get-credentials ${GOOGLE_CLUSTER_NAME_VAR};
+  else
+    echo "ERROR: needs account_json, project_id, compute_zone, cluster_name - $0 -h for usage";
+  fi;
+  exit;
+}
+
+
+function login_docker()
+{
+  if [ -n "$GOOGLE_ACCOUNT_JSON_VAR" ];
+  then
+    echo "${GOOGLE_ACCOUNT_JSON_VAR}" > account.json;
+    gcloud auth activate-service-account --key-file account.json;
+  else
+    echo "ERROR: needs account_json - $0 -h for usage";
+    exit 1;
+  fi;
+  exit;
+}
+
 
 function build_docker()
 {
