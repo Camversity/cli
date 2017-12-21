@@ -341,12 +341,17 @@ function report_status()
     REPORT_COLOR="danger"; #default
     REPORT_FILTER="success";
     DEPLOY_STATUS=$(echo $STATUS_TEXT | sed 's/"/*/g' | sed "s/'/*/g" );
+    CIRCLE_BUILD_URL="https://circleci.com/gh/Camversity/camversity-account/1251";
 
     if [ "$DEPLOY_STATUS" != "${DEPLOY_STATUS%$REPORT_FILTER*}" ]; then
         REPORT_COLOR="good";
     fi
 
-    JSON_REPORT="{\"channel\":\"${REPORT_URL_CHANNEL_VAR}-${GOOGLE_CLUSTER_NAME_VAR}\", \"username\":\"${PROJECT_NAME_VAR}\", \"attachments\":[{\"color\":\"${REPORT_COLOR}\" , \"text\":\"${DEPLOY_STATUS}\nBuild: ${CIRCLE_SHA1_VAR}\" }]}";
+    JSON_REPORT="{\"channel\":\"${REPORT_URL_CHANNEL_VAR}\",
+    \"username\":\"${PROJECT_NAME_VAR}\",
+     \"attachments\":[{
+                        \"color\":\"${REPORT_COLOR}\" ,
+                          \"text\":\"${DEPLOY_STATUS}\nBuild: ${CIRCLE_SHA1_VAR}\" }]}";
     REPORT_ANSWER=`curl -X POST -H 'Content-type: application/json' --data "$JSON_REPORT" "$REPORT_URL_VAR"`;
     exit;
   else
