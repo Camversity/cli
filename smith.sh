@@ -6,6 +6,9 @@ GOOGLE_COMPUTE_ZONE_VAR="";
 GOOGLE_CLUSTER_NAME_VAR="";
 PROJECT_NAME_VAR="";
 CIRCLE_SHA1_VAR="";
+CIRCLE_BUILD_URL_VAR="";
+CIRCLE_PULL_REQUEST_VAR=""
+CIRCLE_BUILD_NUM_VAR="";
 REPORT_URL_VAR="";
 REPORT_URL_CHANNEL_VAR="";
 SHOW_VAR="";
@@ -50,6 +53,9 @@ function read_env_vars()
   GOOGLE_CLUSTER_NAME_VAR=$GOOGLE_CLUSTER_NAME;
   PROJECT_NAME_VAR=$PROJECT_NAME;
   CIRCLE_SHA1_VAR=$CIRCLE_SHA1;
+  CIRCLE_BUILD_URL_VAR=${CIRCLE_BUILD_URL};
+  CIRCLE_PULL_REQUEST_VAR=${CIRCLE_PULL_REQUEST};
+  CIRCLE_BUILD_NUM_VAR=${CIRCLE_BUILD_NUM};
   REPORT_URL_VAR=$REPORT_URL;
   REPORT_URL_CHANNEL_VAR=$REPORT_URL_CHANNEL;
 }
@@ -339,9 +345,8 @@ function report_status()
   then
     STATUS_TEXT=$(kubectl rollout status deployment ${PROJECT_NAME_VAR});
     REPORT_COLOR="danger"; #default
-    REPORT_FILTER="success";
+    REPORT_FILTER="successfully";
     DEPLOY_STATUS=$(echo $STATUS_TEXT | sed 's/"/*/g' | sed "s/'/*/g" );
-    CIRCLE_BUILD_URL="https://circleci.com/gh/Camversity/camversity-account/1251";
 
     if [ "$DEPLOY_STATUS" != "${DEPLOY_STATUS%$REPORT_FILTER*}" ]; then
         REPORT_COLOR="good";
@@ -349,9 +354,16 @@ function report_status()
 
     JSON_REPORT="{\"channel\":\"${REPORT_URL_CHANNEL_VAR}\",
     \"username\":\"${PROJECT_NAME_VAR}\",
-     \"attachments\":[{
-                        \"color\":\"${REPORT_COLOR}\" ,
-                          \"text\":\"${DEPLOY_STATUS}\nBuild: ${CIRCLE_SHA1_VAR}\" }]}";
+     \"attachments\":[
+                      {
+                        \"fallback\": \"${DEPLOY_STATUS} - ${CIRCLE_BUILD_URL_VAR}\",
+                        \"pretext\": \"\",
+                        \"title\": \"${DEPLOY_STATUS} - CI build: ${CIRCLE_BUILD_NUM_VAR}\",
+                        \"title_link\": \"${CIRCLE_BUILD_URL_VAR}\",
+                        \"text\": \"From pull request: <${CIRCLE_PULL_REQUEST_VAR}|${CIRCLE_SHA1_VAR}>\",
+                        \"color\": \"${REPORT_COLOR}\"
+                      }
+                  ]}";
     REPORT_ANSWER=`curl -X POST -H 'Content-type: application/json' --data "$JSON_REPORT" "$REPORT_URL_VAR"`;
     exit;
   else
