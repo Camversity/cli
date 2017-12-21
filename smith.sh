@@ -352,7 +352,7 @@ function report_status()
         REPORT_COLOR="good";
     fi
 
-    JSON_REPORT="{\"channel\":\"${REPORT_URL_CHANNEL_VAR}\",
+    JSON_REPORT="{\"channel\":\"${REPORT_URL_CHANNEL_VAR}-${GOOGLE_CLUSTER_NAME_VAR}\",
     \"username\":\"${PROJECT_NAME_VAR}\",
      \"attachments\":[
                       {
