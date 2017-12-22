@@ -7,8 +7,9 @@ GOOGLE_CLUSTER_NAME_VAR="";
 PROJECT_NAME_VAR="";
 CIRCLE_SHA1_VAR="";
 CIRCLE_BUILD_URL_VAR="";
-CIRCLE_PULL_REQUEST_VAR=""
 CIRCLE_BUILD_NUM_VAR="";
+CIRCLE_PROJECT_REPONAME_VAR="";
+CIRCLE_PROJECT_USERNAME_VAR="";
 REPORT_URL_VAR="";
 REPORT_URL_CHANNEL_VAR="";
 SHOW_VAR="";
@@ -54,8 +55,9 @@ function read_env_vars()
   PROJECT_NAME_VAR=$PROJECT_NAME;
   CIRCLE_SHA1_VAR=$CIRCLE_SHA1;
   CIRCLE_BUILD_URL_VAR=${CIRCLE_BUILD_URL};
-  CIRCLE_PULL_REQUEST_VAR=${CIRCLE_PULL_REQUEST};
   CIRCLE_BUILD_NUM_VAR=${CIRCLE_BUILD_NUM};
+  CIRCLE_PROJECT_REPONAME_VAR=${CIRCLE_PROJECT_REPONAME}
+  CIRCLE_PROJECT_USERNAME_VAR=${CIRCLE_PROJECT_USERNAME}
   REPORT_URL_VAR=$REPORT_URL;
   REPORT_URL_CHANNEL_VAR=$REPORT_URL_CHANNEL;
 }
@@ -347,8 +349,17 @@ function report_status()
     REPORT_COLOR="danger"; #default
     REPORT_FILTER="successfully";
     DEPLOY_STATUS=$(echo $STATUS_TEXT | sed 's/"/*/g' | sed "s/'/*/g" );
+    REPOLINK_VAR="";
+    MESSAGE_TEXT="From commit: ${CIRCLE_SHA1_VAR}"
 
-    if [ "$DEPLOY_STATUS" != "${DEPLOY_STATUS%$REPORT_FILTER*}" ]; then
+    if [ -n "${CIRCLE_PROJECT_USERNAME_VAR}"  -a -n "${CIRCLE_PROJECT_REPONAME_VAR}" ];
+      then
+        REPOLINK_VAR="https://github.com/${CIRCLE_PROJECT_USERNAME_VAR}/${CIRCLE_PROJECT_REPONAME_VAR}/commit/${CIRCLE_SHA1_VAR}";
+        MESSAGE_TEXT="From commit: <${REPOLINK_VAR}|${CIRCLE_SHA1_VAR}>"
+    fi
+
+    if [ "$DEPLOY_STATUS" != "${DEPLOY_STATUS%$REPORT_FILTER*}" ];
+      then
         REPORT_COLOR="good";
     fi
 
@@ -360,7 +371,7 @@ function report_status()
                         \"pretext\": \"\",
                         \"title\": \"${DEPLOY_STATUS} - CI build: ${CIRCLE_BUILD_NUM_VAR}\",
                         \"title_link\": \"${CIRCLE_BUILD_URL_VAR}\",
-                        \"text\": \"From pull request: <${CIRCLE_PULL_REQUEST_VAR}|${CIRCLE_SHA1_VAR}>\",
+                        \"text\": \"${MESSAGE_TEXT}\",
                         \"color\": \"${REPORT_COLOR}\"
                       }
                   ]}";
