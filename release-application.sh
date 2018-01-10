@@ -9,7 +9,6 @@
 set -e
 
 RELEASE_PROCESS_PROPERTIES="release-application.properties"
-MAVEN_PROPERTIES="target/maven-archiver/pom.properties"
 APPLICATION_PROPERTIES="src/main/resources/application.properties"
 APPLICATION_VERSION_PROPERTY="application_version"
 
@@ -58,13 +57,12 @@ extract_build_profile_var() {
 
 extract_application_versions() {
 
-    # Fast build the current application to be able the extract
-    # the version and update it to a proper release version
-    mvn package -Pfast-unsafe-build
+    # Extract the current application version
+    local CURRENT_VERSION=`printf 'APPLICATION_VERSION=${project.version}\n0\n' |\
+        mvn help:evaluate |\
+        grep '^APPLICATION_VERSION=' |\
+        sed -r 's/(^APPLICATION_VERSION=)(.+)(-SNAPSHOT|-RELEASE)/\2/'`
 
-    extract_property ${MAVEN_PROPERTIES} "version"
-
-    local CURRENT_VERSION=`echo ${PROPERTY_VALUE} | sed -r "s/(-SNAPSHOT|-RELEASE)//"`
     RELEASED_VERSION=${CURRENT_VERSION}-RELEASE
 
     # Extract the versions
