@@ -122,7 +122,7 @@ build_release_artifact() {
     git commit --amend -m "Released version: ${RELEASED_VERSION}."
 
     # Perform the build.
-    mvn clean install -P${BUILD_PROFILE} -DsnapshotsAllowed=true # TODO(cstan) must be set to false!!!
+    mvn clean install -P${BUILD_PROFILE} -DsnapshotsAllowed=false
 }
 
 # Deploy the released artifact to Nexus
