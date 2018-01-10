@@ -6,7 +6,7 @@
 
 # Exit on any error to avoid troubles.
 # Print the statements before running them
-set -e
+set -ex
 
 RELEASE_PROCESS_PROPERTIES="release-application.properties"
 APPLICATION_PROPERTIES="src/main/resources/application.properties"
