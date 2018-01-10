@@ -125,7 +125,8 @@ build_release_artifact() {
 
 # Deploy the released artifact to Nexus
 deploy_artifact() {
-    mvn deploy -Pfast-unsafe-build
+    # Skip tests - they were already ran in the build step
+    mvn deploy -P${BUILD_PROFILE} -DskipTests
 }
 
 # Update the scm state according to our release workflow.
