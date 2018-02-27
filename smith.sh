@@ -338,6 +338,7 @@ function rollout_status_error()
 {
 
 if [ -n "$(ps -p $1 -o pid=)" ]
+  then
   kill -s SIGTERM $1 && kill -0 $1 || exit 0
   sleep 5;
   kill -s SIGKILL $1
@@ -345,8 +346,8 @@ if [ -n "$(ps -p $1 -o pid=)" ]
   rollout_status_error_info;
   DEPLOY_STATUS_ERROR_TEXT="Deployment timeout - please check CI job for info";
 
-else
- exit;
+  else
+    exit;
 fi;
 }
 
@@ -368,7 +369,7 @@ function rollout_status_error_info(){
           printf "\n\n\n\n\n\n"
         fi
       done
-
+exit;
 }
 
 
