@@ -310,13 +310,18 @@ function rollout_status()
 
     interval=1 #1 second
     rollout_status_raw & CPID=$!
-    echo $CPID;
 
     ((t = $DEPLOY_TIMEOUT_VAR ))
+
       while ((t > 0));
         do
-          sleep $interval;
-          ((t -= $interval))
+          if [ -n "$(ps -p ${CPID} -o pid=)" ]
+            then
+              sleep $interval;
+              ((t -= $interval))
+            else
+              exit 0;
+          fi
         done
 
     rollout_status_error $CPID;
@@ -336,21 +341,17 @@ kubectl rollout status deployment ${PROJECT_NAME_VAR}
 
 function rollout_status_error()
 {
-
 if [ -n "$(ps -p $1 -o pid=)" ]
   then
+  rollout_status_error_info;
+  DEPLOY_STATUS_ERROR_TEXT="Deployment timeout - please check CI job for info";
   kill -s SIGTERM $1 && kill -0 $1 || exit 0
   sleep 5;
   kill -s SIGKILL $1
-
-  rollout_status_error_info;
-  DEPLOY_STATUS_ERROR_TEXT="Deployment timeout - please check CI job for info";
-
   else
     exit;
 fi;
 }
-
 
 function rollout_status_error_info(){
 
@@ -369,7 +370,6 @@ function rollout_status_error_info(){
           printf "\n\n\n\n\n\n"
         fi
       done
-exit;
 }
 
 
