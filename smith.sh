@@ -103,6 +103,7 @@ function read_args()
         ;;
       --report-channel)
         REPORT_URL_CHANNEL_ARG=$VALUE
+        ;;
       --deploy-timeout)
         DEPLOY_TIMEOUT_ARG=$VALUE
         ;;
