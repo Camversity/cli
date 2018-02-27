@@ -333,29 +333,28 @@ function rollout_status()
 
 function rollout_status_raw()
 {
-kubectl rollout status deployment ${PROJECT_NAME_VAR}
+  kubectl rollout status deployment ${PROJECT_NAME_VAR}
 }
 
 
 function rollout_status_error()
 {
-if [ -n "$(ps -p $1 -o pid=)" ]
-  then
-    rollout_status_error_info;
-
-    echo "INFO: Killing deployment process as is timed out";
-
-    kill -s SIGTERM $1 && kill -0 $1 || exit 0
-    sleep 5;
-    kill -s SIGKILL $1
-  else
-    exit;
+  if [ -n "$(ps -p $1 -o pid=)" ]
+    then
+      rollout_status_error_info;
+      echo "INFO: Killing deployment process as is timed out";
+      kill -s SIGTERM $1 && kill -0 $1 || exit 0
+      sleep 5;
+      kill -s SIGKILL $1
+    else
+     exit;
 fi;
 }
 
+
 function rollout_status_error_info(){
 
-  kubectl get pods --selector=app=${PROJECT_NAME_VAR} |  \
+  kubectl get pods --selector=app=${PROJECT_NAME_VAR} --no-headers=true |  \
    while read line;
       do
         podname=`echo $line | awk '{print $1}'`
@@ -429,7 +428,7 @@ function report_status()
       then
         REPORT_COLOR="good";
       else
-        STATUS_TEXT="${STATUS_TEXT} - Check CI for details";
+        DEPLOY_STATUS="${DEPLOY_STATUS} - Check CI for details";
     fi
 
     JSON_REPORT="{\"channel\":\"${REPORT_URL_CHANNEL_VAR}-${GOOGLE_CLUSTER_NAME_VAR}\",
