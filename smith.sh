@@ -45,6 +45,7 @@ function usage()
   echo "--report-url=web_destination"
   echo "--report-channel=channel"
   echo "--show-var  shows the variables if set"
+  echo "--deploy-timeout  time in seconds to wait for deployment to finish - default 300"
 }
 
 
