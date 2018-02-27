@@ -344,12 +344,12 @@ function rollout_status_error()
 if [ -n "$(ps -p $1 -o pid=)" ]
   then
 
-  rollout_status_error_info;
-  DEPLOY_STATUS_ERROR_TEXT="Deployment timeout - please check CI job for info";
-  kill -s SIGTERM $1 && kill -0 $1 || exit 0
-  sleep 5;
-  kill -s SIGKILL $1
-
+    DEPLOY_STATUS_ERROR_TEXT="Deployment timeout - please check CI job for info";
+    echo "${DEPLOY_STATUS_ERROR_TEXT}";
+    rollout_status_error_info;
+    kill -s SIGTERM $1 && kill -0 $1 || exit 0
+    sleep 5;
+    kill -s SIGKILL $1
   else
     exit;
 fi;
@@ -373,7 +373,6 @@ function rollout_status_error_info(){
         fi
       done
 }
-
 
 
 function rollback()
@@ -414,14 +413,17 @@ function report_status()
 {
   if [ -n "${PROJECT_NAME_VAR}" -a -n "${REPORT_URL_VAR}" -a -n "${CIRCLE_SHA1_VAR}" -a -n "${REPORT_URL_CHANNEL_VAR}" -a -n"${GOOGLE_CLUSTER_NAME_VAR}" ];
   then
+    STATUS_TEXT="";
 
-    if [ ! -z "${DEPLOY_STATUS_ERROR_TEXT}" ];
+    if [ ! -z "$DEPLOY_STATUS_ERROR_TEXT" ];
       then
         STATUS_TEXT=$(kubectl rollout status deployment ${PROJECT_NAME_VAR});
       else
         STATUS_TEXT=${DEPLOY_STATUS_ERROR_TEXT};
     fi
+
     #STATUS_TEXT=$(kubectl rollout status deployment ${PROJECT_NAME_VAR});
+
     REPORT_COLOR="danger"; #default
     REPORT_FILTER="successfully";
     DEPLOY_STATUS=$(echo $STATUS_TEXT | sed 's/"/*/g' | sed "s/'/*/g" );
