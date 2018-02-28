@@ -356,19 +356,16 @@ fi;
 function rollout_status_error_info(){
 
   kubectl get pods --selector=app=${PROJECT_NAME_VAR} --no-headers=true |  \
+  grep -v "Running" | \
    while read line;
       do
         podname=`echo $line | awk '{print $1}'`
         podstatus=`echo $line | awk '{print $3}'`
-
-        if [ "$podstatus" != "Running" ]
-          then
-          printf "\n"
-          echo "INFO: POD $podname is in status $podstatus";
-          printf "\n"
-          kubectl logs $podname $PROJECT_NAME_VAR;
-          printf "\n\n\n\n\n\n"
-        fi
+        printf "\n"
+        echo "INFO: POD $podname is in status $podstatus";
+        printf "\n"
+        kubectl logs $podname $PROJECT_NAME_VAR;
+        printf "\n\n\n\n\n\n"
       done
 }
 
