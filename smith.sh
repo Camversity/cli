@@ -360,11 +360,11 @@ ERROR_PODS=$(kubectl get pods --selector=app=${PROJECT_NAME_VAR} -o go-template=
 
 for item in $ERROR_PODS
  do
-   echo "INFO: POD ${item%%:*} is in status ${item##*:}";
-   printf "\n"
+   printf "INFO: POD ${item%%:*} is in status ${item##*:}\n";
    tmpc=${item%:*};
+   printf "INFO: logs for container ${tmpc#*:}\n";
    kubectl logs ${item%%:*} --container=${tmpc#*:} --tail=150;
-   printf "\n"
+   printf "\n";
  done
 
 }
