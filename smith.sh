@@ -356,7 +356,7 @@ fi;
 function rollout_status_error_info()
 {
 
-ERROR_PODS=(kubectl get pods --selector=app=${PROJECT_NAME_VAR} -o go-template='{{range $index, $element:= .items}}{{range .status.containerStatuses}}{{if .state.waiting.reason }}{{$element.metadata.name}}:{{ .name }}:{{.state.waiting.reason }}{{"\n"}}{{end}}{{end}}{{end}}');
+ERROR_PODS=$(kubectl get pods --selector=app=${PROJECT_NAME_VAR} -o go-template='{{range $index, $element:= .items}}{{range .status.containerStatuses}}{{if .state.waiting.reason }}{{$element.metadata.name}}:{{ .name }}:{{.state.waiting.reason }}{{"\n"}}{{end}}{{end}}{{end}}');
 
 for item in $ERROR_PODS
  do
