@@ -344,7 +344,7 @@ function rollout_status_error()
     then
       rollout_status_error_info;
       echo "INFO: Killing deployment process as is timed out";
-      kill -s SIGTERM $1 && kill -0 $1  2> /dev/null || exit 0
+      kill -s SIGTERM $1 2> /dev/null && kill -0 $1 2> /dev/null || exit 0
       sleep 5;
       kill -s SIGKILL $1 2> /dev/null
     else
