@@ -353,20 +353,20 @@ fi;
 }
 
 
-function rollout_status_error_info(){
+function rollout_status_error_info()
+{
 
-  kubectl get pods --selector=app=${PROJECT_NAME_VAR} --no-headers=true |  \
-  grep -v "Running" | \
-   while read line;
-      do
-        podname=`echo $line | awk '{print $1}'`
-        podstatus=`echo $line | awk '{print $3}'`
-        printf "\n"
-        echo "INFO: POD $podname is in status $podstatus";
-        printf "\n"
-        kubectl logs $podname $PROJECT_NAME_VAR;
-        printf "\n\n\n\n\n\n"
-      done
+ERROR_PODS=(kubectl get pods --selector=app=${PROJECT_NAME_VAR} -o go-template='{{range $index, $element:= .items}}{{range .status.containerStatuses}}{{if .state.waiting.reason }}{{$element.metadata.name}}:{{ .name }}:{{.state.waiting.reason }}{{"\n"}}{{end}}{{end}}{{end}}');
+
+for item in $ERROR_PODS
+ do
+   echo "INFO: POD ${item%%:*} is in status ${item##*:}";
+   printf "\n"
+   tmpc=${item%:*};
+   kubectl logs ${item%%:*} --container=${tmpc#*:} --tail=150;
+   printf "\n"
+ done
+
 }
 
 
