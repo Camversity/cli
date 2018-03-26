@@ -48,7 +48,7 @@ function usage()
   echo "--report-channel=channel"
   echo "--show-var  shows the variables if set"
   echo "--deploy-timeout  time in seconds to wait for deployment to finish - default 300"
-  echo "--docker_tag=custom docker tag - default <<latest>>"
+  echo "--docker-tag=custom docker tag - default <<latest>>"
 }
 
 
