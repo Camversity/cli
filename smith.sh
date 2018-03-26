@@ -13,6 +13,7 @@ CIRCLE_PROJECT_USERNAME_VAR="";
 REPORT_URL_VAR="";
 REPORT_URL_CHANNEL_VAR="";
 SHOW_VAR="";
+DEPLOY_TIMEOUT_VAR="";
 
 
 GOOGLE_ACCOUNT_JSON_ARG="";
@@ -23,6 +24,7 @@ PROJECT_NAME_ARG="";
 CIRCLE_SHA1_ARG="";
 REPORT_URL_ARG="";
 REPORT_URL_CHANNEL_ARG="";
+DEPLOY_TIMEOUT_ARG="";
 
 DO_ACTION="";
 DEPLOY_STATUS="";
@@ -43,6 +45,7 @@ function usage()
   echo "--report-url=web_destination"
   echo "--report-channel=channel"
   echo "--show-var  shows the variables if set"
+  echo "--deploy-timeout  time in seconds to wait for deployment to finish - default 300"
 }
 
 
@@ -60,6 +63,7 @@ function read_env_vars()
   CIRCLE_PROJECT_USERNAME_VAR=${CIRCLE_PROJECT_USERNAME}
   REPORT_URL_VAR=$REPORT_URL;
   REPORT_URL_CHANNEL_VAR=$REPORT_URL_CHANNEL;
+  DEPLOY_TIMEOUT_VAR=${DEPLOY_TIMEOUT:-300};
 }
 
 
@@ -98,6 +102,9 @@ function read_args()
         ;;
       --report-channel)
         REPORT_URL_CHANNEL_ARG=$VALUE
+        ;;
+      --deploy-timeout)
+        DEPLOY_TIMEOUT_ARG=$VALUE
         ;;
       --show-var)
         SHOW_VAR="yes"
@@ -150,7 +157,7 @@ function override_env_vars()
   if [ ! -z "$CIRCLE_SHA1_ARG" ]; then CIRCLE_SHA1_VAR=$CIRCLE_SHA1_ARG; fi;
   if [ ! -z "$REPORT_URL_ARG" ]; then REPORT_URL_VAR=$REPORT_URL_ARG; fi;
   if [ ! -z "$REPORT_URL_CHANNEL_ARG" ]; then REPORT_URL_CHANNEL_VAR=$REPORT_URL_CHANNEL_ARG; fi;
-
+  if [ ! -z "$DEPLOY_TIMEOUT_ARG" ]; then DEPLOY_TIMEOUT_VAR=$DEPLOY_TIMEOUT_ARG; fi;
 }
 
 
@@ -299,11 +306,67 @@ function rollout_status()
 {
   if [ -n "${PROJECT_NAME_VAR}" ];
   then
-    kubectl rollout status deployment ${PROJECT_NAME_VAR}
+
+    interval=1 #1 second
+    rollout_status_raw & CPID=$!
+
+    ((t = $DEPLOY_TIMEOUT_VAR ))
+
+      while ((t > 0));
+        do
+          if [ -n "$(ps -p ${CPID} -o pid=)" ]
+            then
+              sleep $interval;
+              ((t -= $interval))
+            else
+              exit 0;
+          fi
+        done
+
+    rollout_status_error $CPID;
+
   else
     echo "ERROR: needs project_name - $0 -h for usage";
   fi;
   exit;
+}
+
+
+function rollout_status_raw()
+{
+  kubectl rollout status deployment ${PROJECT_NAME_VAR}
+}
+
+
+function rollout_status_error()
+{
+  if [ -n "$(ps -p $1 -o pid=)" ]
+    then
+      rollout_status_error_info;
+      echo "INFO: Killing deployment process as is timed out";
+      kill -s SIGTERM $1 && kill -0 $1 || exit 0
+      sleep 5;
+      kill -s SIGKILL $1 2> /dev/null
+    else
+     exit;
+fi;
+}
+
+
+function rollout_status_error_info()
+{
+
+ERROR_PODS=$(kubectl get pods --selector=app=${PROJECT_NAME_VAR} -o go-template='{{range $index, $element:= .items}}{{range .status.containerStatuses}}{{if .state.waiting.reason }}{{$element.metadata.name}}:{{ .name }}:{{.state.waiting.reason }}{{"\n"}}{{end}}{{end}}{{end}}');
+
+for item in $ERROR_PODS
+ do
+   printf "INFO: POD ${item%%:*} is in status ${item##*:}\n";
+   tmpc=${item%:*};
+   printf "INFO: logs for container ${tmpc#*:}\n";
+   kubectl logs ${item%%:*} --container=${tmpc#*:} --tail=150;
+   printf "\n";
+ done
+
 }
 
 
@@ -345,7 +408,8 @@ function report_status()
 {
   if [ -n "${PROJECT_NAME_VAR}" -a -n "${REPORT_URL_VAR}" -a -n "${CIRCLE_SHA1_VAR}" -a -n "${REPORT_URL_CHANNEL_VAR}" -a -n"${GOOGLE_CLUSTER_NAME_VAR}" ];
   then
-    STATUS_TEXT=$(kubectl rollout status deployment ${PROJECT_NAME_VAR});
+    STATUS_TEXT=$(kubectl rollout status deployment ${PROJECT_NAME_VAR} --watch=false);
+
     REPORT_COLOR="danger"; #default
     REPORT_FILTER="successfully";
     DEPLOY_STATUS=$(echo $STATUS_TEXT | sed 's/"/*/g' | sed "s/'/*/g" );
@@ -361,6 +425,8 @@ function report_status()
     if [ "$DEPLOY_STATUS" != "${DEPLOY_STATUS%$REPORT_FILTER*}" ];
       then
         REPORT_COLOR="good";
+      else
+        DEPLOY_STATUS="${DEPLOY_STATUS} - Check CI for details";
     fi
 
     JSON_REPORT="{\"channel\":\"${REPORT_URL_CHANNEL_VAR}-${GOOGLE_CLUSTER_NAME_VAR}\",
