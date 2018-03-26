@@ -14,6 +14,7 @@ REPORT_URL_VAR="";
 REPORT_URL_CHANNEL_VAR="";
 SHOW_VAR="";
 DEPLOY_TIMEOUT_VAR="";
+DOCKER_TAG_VAR="";
 
 
 GOOGLE_ACCOUNT_JSON_ARG="";
@@ -25,6 +26,7 @@ CIRCLE_SHA1_ARG="";
 REPORT_URL_ARG="";
 REPORT_URL_CHANNEL_ARG="";
 DEPLOY_TIMEOUT_ARG="";
+DOCKER_TAG_ARG="";
 
 DO_ACTION="";
 DEPLOY_STATUS="";
@@ -46,6 +48,7 @@ function usage()
   echo "--report-channel=channel"
   echo "--show-var  shows the variables if set"
   echo "--deploy-timeout  time in seconds to wait for deployment to finish - default 300"
+  echo "--docker_tag=custom docker tag - default <<latest>>"
 }
 
 
@@ -64,6 +67,7 @@ function read_env_vars()
   REPORT_URL_VAR=$REPORT_URL;
   REPORT_URL_CHANNEL_VAR=$REPORT_URL_CHANNEL;
   DEPLOY_TIMEOUT_VAR=${DEPLOY_TIMEOUT:-300};
+  DOCKER_TAG_VAR=${DOCKER_TAG:-"latest"}
 }
 
 
@@ -109,6 +113,9 @@ function read_args()
       --show-var)
         SHOW_VAR="yes"
         ;;
+      --docker-tag)
+        DOCKER_TAG_ARG=$VALUE
+          ;;
       login)
         DO_ACTION="login"
         ;;
@@ -158,6 +165,7 @@ function override_env_vars()
   if [ ! -z "$REPORT_URL_ARG" ]; then REPORT_URL_VAR=$REPORT_URL_ARG; fi;
   if [ ! -z "$REPORT_URL_CHANNEL_ARG" ]; then REPORT_URL_CHANNEL_VAR=$REPORT_URL_CHANNEL_ARG; fi;
   if [ ! -z "$DEPLOY_TIMEOUT_ARG" ]; then DEPLOY_TIMEOUT_VAR=$DEPLOY_TIMEOUT_ARG; fi;
+  if [ ! -z "$DOCKER_TAG_ARG" ]; then DOCKER_TAG_VAR=$DOCKER_TAG_ARG; fi;
 }
 
 
@@ -260,28 +268,26 @@ function login_docker()
 
 function build_docker()
 {
-  if [ -n "${GOOGLE_PROJECT_ID_VAR}" -a -n "${PROJECT_NAME_VAR}" -a -n "${CIRCLE_SHA1_VAR}" ];
+  if [ -n "${GOOGLE_PROJECT_ID_VAR}" -a -n "${PROJECT_NAME_VAR}" -a -n "${CIRCLE_SHA1_VAR}" -a -n "${DOCKER_TAG_VAR}" ];
   then
     export DOCKER_NAME="gcr.io/${GOOGLE_PROJECT_ID_VAR}/${PROJECT_NAME_VAR}";
-    export DOCKER_TAG="${DOCKER_NAME}:${CIRCLE_SHA1_VAR}";
-    docker build -f Dockerfile.prod -t ${DOCKER_TAG} .;
-    docker tag ${DOCKER_TAG} ${DOCKER_NAME}:latest;
+    docker build -f Dockerfile.prod -t ${DOCKER_NAME}:${CIRCLE_SHA1_VAR} .;
+    docker tag ${DOCKER_NAME}:${CIRCLE_SHA1_VAR} ${DOCKER_NAME}:${DOCKER_TAG_VAR};
   else
-    echo "ERROR: needs project_id, project_name, commit_hash - $0 -h for usage";
+    echo "ERROR: needs project_id, project_name, commit_hash, docker tag - $0 -h for usage";
   fi;
   exit;
 }
 
 function push_docker()
 {
-  if [ -n "${GOOGLE_PROJECT_ID_VAR}" -a -n "${PROJECT_NAME_VAR}" -a -n "${CIRCLE_SHA1_VAR}" ];
+  if [ -n "${GOOGLE_PROJECT_ID_VAR}" -a -n "${PROJECT_NAME_VAR}" -a -n "${CIRCLE_SHA1_VAR}" -a -n "${DOCKER_TAG_VAR}" ];
   then
     export DOCKER_NAME="gcr.io/${GOOGLE_PROJECT_ID_VAR}/${PROJECT_NAME_VAR}";
-    export DOCKER_TAG="${DOCKER_NAME}:${CIRCLE_SHA1_VAR}";
-    gcloud docker -- push ${DOCKER_TAG}
-    gcloud docker -- push ${DOCKER_NAME}:latest
+    gcloud docker -- push ${DOCKER_NAME}:${CIRCLE_SHA1_VAR}
+    gcloud docker -- push ${DOCKER_NAME}:${DOCKER_TAG_VAR}
   else
-    echo "ERROR: needs project_id, project_name, commit_hash - $0 -h for usage";
+    echo "ERROR: needs project_id, project_name, commit_hash, docker tag - $0 -h for usage";
 
   fi;
   exit;
@@ -292,10 +298,9 @@ function deploy()
   if [ -n "${GOOGLE_PROJECT_ID_VAR}" -a -n "${PROJECT_NAME_VAR}" -a -n "${CIRCLE_SHA1_VAR}" ];
   then
     export DOCKER_NAME="gcr.io/${GOOGLE_PROJECT_ID_VAR}/${PROJECT_NAME_VAR}";
-    export DOCKER_TAG="${DOCKER_NAME}:${CIRCLE_SHA1_VAR}";
-    kubectl set image deployment/${PROJECT_NAME_VAR} ${PROJECT_NAME_VAR}=${DOCKER_TAG} --record
+    kubectl set image deployment/${PROJECT_NAME_VAR} ${PROJECT_NAME_VAR}=${DOCKER_NAME}:${CIRCLE_SHA1_VAR} --record
   else
-    echo "ERROR: needs project_id, project_name, commit_hash - $0 -h for usage";
+    echo "ERROR: needs project_id, project_name, commit_hash, docker tag - $0 -h for usage";
 
   fi;
   exit;
@@ -391,12 +396,14 @@ function show-var()
     export GOOGLE_CLUSTER_NAME=$GOOGLE_CLUSTER_NAME_VAR;
     export PROJECT_NAME=$PROJECT_NAME_VAR;
     export CIRCLE_SHA1=$CIRCLE_SHA1_VAR;
+    export DOCKER_TAG=$DOCKER_TAG_VAR;
 
     echo "project_id:" $GOOGLE_PROJECT_ID;
     echo "compute_zone: "$GOOGLE_COMPUTE_ZONE;
     echo "cluster_name: "$GOOGLE_CLUSTER_NAME;
     echo "project_name: "$PROJECT_NAME;
     echo "commit_hash: "$CIRCLE_SHA1;
+    echo "docker_custom_tag: "$DOCKER_TAG;
     echo "action: "$DO_ACTION;
 
 
