@@ -258,6 +258,7 @@ function login_docker()
   then
     echo "${GOOGLE_ACCOUNT_JSON_VAR}" > account.json;
     gcloud auth activate-service-account --key-file account.json;
+    gcloud auth configure-docker --quiet;
   else
     echo "ERROR: needs account_json - $0 -h for usage";
     exit 1;
@@ -279,33 +280,34 @@ function build_docker()
   exit;
 }
 
-function push_docker()
-{
-  COMMAND_OUTPUT="$(push_docker_raw 2>&1)";
-  ERROR_FILTER="error:";
-  COMMAND_OUTPUT_LOW = "${COMMAND_OUTPUT,,}"
-
-  if [ "$COMMAND_OUTPUT_LOW" != "${COMMAND_OUTPUT_LOW%$ERROR_FILTER*}" ];
-   then
-     echo "$COMMAND_OUTPUT";
-     exit 1;
-   else
-     echo "$COMMAND_OUTPUT";
-     exit 0;
-   fi
-  exit;
-}
-
 function push_docker_raw()
 {
   if [ -n "${GOOGLE_PROJECT_ID_VAR}" -a -n "${PROJECT_NAME_VAR}" -a -n "${CIRCLE_SHA1_VAR}" -a -n "${DOCKER_TAG_VAR}" ];
   then
     export DOCKER_NAME="gcr.io/${GOOGLE_PROJECT_ID_VAR}/${PROJECT_NAME_VAR}";
-    gcloud docker -- push ${DOCKER_NAME}:${CIRCLE_SHA1_VAR};
-    gcloud docker -- push ${DOCKER_NAME}:${DOCKER_TAG_VAR}
+    docker push ${DOCKER_NAME}:${CIRCLE_SHA1_VAR};
+    docker push ${DOCKER_NAME}:${DOCKER_TAG_VAR}
   else
     echo "ERROR: needs project_id, project_name, commit_hash, docker tag - $0 -h for usage";
   fi;
+  exit;
+}
+
+function push_docker()
+{
+  COMMAND_OUTPUT="$(push_docker_raw 2>&1)";
+
+  echo "$COMMAND_OUTPUT";
+
+  ERROR_FILTER="error:";
+  COMMAND_OUTPUT_LOW="${COMMAND_OUTPUT,,}";
+
+  if [ "$COMMAND_OUTPUT_LOW" != "${COMMAND_OUTPUT_LOW%$ERROR_FILTER*}" ];
+   then
+     exit 1;
+   else
+     exit 0;
+   fi
   exit;
 }
 
