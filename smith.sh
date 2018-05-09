@@ -302,8 +302,8 @@ function push_docker_raw()
   if [ -n "${GOOGLE_PROJECT_ID_VAR}" -a -n "${PROJECT_NAME_VAR}" -a -n "${CIRCLE_SHA1_VAR}" -a -n "${DOCKER_TAG_VAR}" ];
   then
     export DOCKER_NAME="gcr.io/${GOOGLE_PROJECT_ID_VAR}/${PROJECT_NAME_VAR}";
-    docker -- push ${DOCKER_NAME}:${CIRCLE_SHA1_VAR};
-    docker -- push ${DOCKER_NAME}:${DOCKER_TAG_VAR}
+    docker push ${DOCKER_NAME}:${CIRCLE_SHA1_VAR};
+    docker push ${DOCKER_NAME}:${DOCKER_TAG_VAR}
   else
     echo "ERROR: needs project_id, project_name, commit_hash, docker tag - $0 -h for usage";
   fi;
