@@ -258,7 +258,7 @@ function login_docker()
   then
     echo "${GOOGLE_ACCOUNT_JSON_VAR}" > account.json;
     gcloud auth activate-service-account --key-file account.json;
-    gcloud auth configure-docker;
+    gcloud auth configure-docker --quiet;
   else
     echo "ERROR: needs account_json - $0 -h for usage";
     exit 1;
