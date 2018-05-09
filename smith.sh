@@ -296,15 +296,16 @@ function push_docker_raw()
 function push_docker()
 {
   COMMAND_OUTPUT="$(push_docker_raw 2>&1)";
+
+  echo "$COMMAND_OUTPUT";
+
   ERROR_FILTER="error:";
-  COMMAND_OUTPUT_LOW="${COMMAND_OUTPUT,,}"
+  COMMAND_OUTPUT_LOW="${COMMAND_OUTPUT,,}";
 
   if [ "$COMMAND_OUTPUT_LOW" != "${COMMAND_OUTPUT_LOW%$ERROR_FILTER*}" ];
    then
-     echo "$COMMAND_OUTPUT";
      exit 1;
    else
-     echo "$COMMAND_OUTPUT";
      exit 0;
    fi
   exit;
