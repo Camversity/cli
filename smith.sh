@@ -274,6 +274,7 @@ function build_docker()
     export DOCKER_NAME="gcr.io/${GOOGLE_PROJECT_ID_VAR}/${PROJECT_NAME_VAR}";
     docker build -f Dockerfile.prod -t ${DOCKER_NAME}:${CIRCLE_SHA1_VAR} .;
     docker tag ${DOCKER_NAME}:${CIRCLE_SHA1_VAR} ${DOCKER_NAME}:${DOCKER_TAG_VAR};
+    docker tag ${DOCKER_NAME}:${CIRCLE_SHA1_VAR} ${DOCKER_NAME}:${CIRCLE_BUILD_NUM_VAR};
   else
     echo "ERROR: needs project_id, project_name, commit_hash, docker tag - $0 -h for usage";
   fi;
@@ -286,6 +287,7 @@ function push_docker_raw()
   then
     export DOCKER_NAME="gcr.io/${GOOGLE_PROJECT_ID_VAR}/${PROJECT_NAME_VAR}";
     docker push ${DOCKER_NAME}:${CIRCLE_SHA1_VAR};
+    docker push ${DOCKER_NAME}:${CIRCLE_BUILD_NUM_VAR}
     docker push ${DOCKER_NAME}:${DOCKER_TAG_VAR}
   else
     echo "ERROR: needs project_id, project_name, commit_hash, docker tag - $0 -h for usage";
