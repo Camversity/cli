@@ -319,6 +319,9 @@ function deploy()
   then
     export DOCKER_NAME="gcr.io/${GOOGLE_PROJECT_ID_VAR}/${PROJECT_NAME_VAR}";
     kubectl set image deployment/${PROJECT_NAME_VAR} ${PROJECT_NAME_VAR}=${DOCKER_NAME}:${CIRCLE_SHA1_VAR} --record
+    if [ "${PROJECT_NAME_VAR}" = "camversity-account" ]; then
+        kubectl set image cronjob/camversity-account-export-job camversity-account-export-job=${DOCKER_NAME}:${CIRCLE_SHA1_VAR}
+    fi
   else
     echo "ERROR: needs project_id, project_name, commit_hash, docker tag - $0 -h for usage";
 
